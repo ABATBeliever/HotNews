@@ -27,12 +27,17 @@ Please Wait
 ## 🚀 How to use
 
 <GUI>
+  
 1. Download and extract Windows_x64_Wizard_en_x.x.x.x.zip from Release.
+  
 2. Start the wizard from HotNews.exe.
+
 3. Enter API key and output format.
 
 <HeadLess>
+  
 1. Download and extract Windows_x64_HeadLess_en_x.x.x.x.zip from Release.
+  
 2. Enter API key and output format in data/config.txt.
 3. It will be automatically obtained when headless.exe is started.
 
