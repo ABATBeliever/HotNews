@@ -1,0 +1,5 @@
+日経新聞@国際・アジア https://assets.wor.jp/rss/rdf/nikkei/international.rdf
+BloomBurg@海外ニュース https://assets.wor.jp/rss/rdf/bloomberg/overseas.rdf
+読売新聞@国際 https://assets.wor.jp/rss/rdf/yomiuri/world.rdf
+47News@国際 https://assets.wor.jp/rss/rdf/ynnews/world.rdf
+[EOF]

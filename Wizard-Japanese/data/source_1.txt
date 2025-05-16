@@ -1,0 +1,17 @@
+Yahoo@政治経済 https://news.yahoo.co.jp/rss/topics/business.xml
+日経新聞@政治経済 https://assets.wor.jp/rss/rdf/nikkei/economy.rdf
+産経新聞@政治 https://assets.wor.jp/rss/rdf/sankei/politics.rdf
+産経新聞@経済 https://assets.wor.jp/rss/rdf/sankei/economy.rdf
+読売経済@政治 https://assets.wor.jp/rss/rdf/yomiuri/politics.rdf
+読売新聞@経済 https://assets.wor.jp/rss/rdf/yomiuri/economy.rdf
+BloomBurg@経済指標 https://assets.wor.jp/rss/rdf/bloomberg/economy.rdf
+BloomBurg@マーケットニュース https://assets.wor.jp/rss/rdf/bloomberg/markets.rdf
+BloomBurg@コラム・特集 https://assets.wor.jp/rss/rdf/bloomberg/commentary.rdf
+47News@政治 https://assets.wor.jp/rss/rdf/ynnews/politics.rdf
+47News@経済 https://assets.wor.jp/rss/rdf/ynnews/economics.rdf
+47News地域@政治 https://assets.wor.jp/rss/rdf/ynlocalnews/politics.rdf
+47News地域@経済 https://assets.wor.jp/rss/rdf/ynlocalnews/economics.rdf
+みんかぶFX/為替@要人発言 https://assets.wor.jp/rss/rdf/minkabufx/statement.rdf
+みんかぶFX/為替@株式 https://assets.wor.jp/rss/rdf/minkabufx/stock.rdf
+みんかぶFX/為替@商品/債権 https://assets.wor.jp/rss/rdf/minkabufx/commodity.rdf
+[EOF]

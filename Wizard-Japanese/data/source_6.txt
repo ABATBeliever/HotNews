@@ -1,0 +1,7 @@
+日経新聞@テクノロジ https://assets.wor.jp/rss/rdf/nikkei/technology.rdf
+読売新聞@テクノロジ https://assets.wor.jp/rss/rdf/yomiuri/science.rdf
+INTERESRWATCH https://internet.watch.impress.co.jp/data/rss/1.0/iw/feed.rdf
+GIGAZINE https://gigazine.net/news/rss_2.0/
+ZENN https://zenn.dev/feed
+ITMedia https://rss.itmedia.co.jp/rss/2.0/itmedia_all.xml
+[EOF]

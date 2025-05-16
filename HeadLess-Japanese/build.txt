@@ -1,0 +1,10 @@
+_FILEVERSION=1.0.0.0
+_PRODUCTVERSION=1.0.0.0
+Comments=HotNews_HeadLess
+CompanyName=ABATBeliever
+FileDescription=Let's_Make_A_News_Summary
+FileVersion=1.0.0.0
+InternalName=HOTNEWS_HEADLESS
+LegalCopyright=Copyright(C)2025_ABATBeliever
+OriginalFilename=headless.exe
+ProductName=HotNews_HeadLessVersion

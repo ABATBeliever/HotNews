@@ -1,0 +1,54 @@
+#module
+	#uselib "user32.dll"
+	#func SetProcessDPIAware "SetProcessDPIAware"
+
+	#deffunc SetOriginalScreenDef int p1, int p2, int p3, int p4
+		dim TitleBarColor,4,3
+		TitleBarColor(0)=p1
+		TitleBarColor(1)=p2
+		TitleBarColor(2)=p3
+		dim MiniButtonStat
+		dim ExitButtonStat
+		if p4=0{SetProcessDPIAware}
+		onclick gosub *ClickedWnd
+	return
+	
+	#deffunc WriteOriginalScreen int p1, int p2 ,int p3, int p4, int p5, int p6, str p7
+		bgscr p1,p2,p3,,(ginfo(20)/2)-(int(p2)/2),(ginfo(21)/2)-(int(p2)/2)
+		color TitleBarColor(0),TitleBarColor(1),TitleBarColor(2):boxf 0,0,p2,25
+		objsize 20,20:pos p2-46,2:button gosub "-",*PressedMini:MiniButtonStat(p1)=stat
+		objenable MiniButtonStat(p1),p5
+		objsize 20,20:pos p2-22,2:button gosub "x",*PressedExit:ExitButtonStat(p1)=stat
+		objenable ExitButtonStat(p1),p6
+		color 000,000,000:pos 2,5:mes p7:title p7
+		color TitleBarColor(0),TitleBarColor(1),TitleBarColor(2):boxf p2-50,0,p2,25
+		color 000,000,000:boxf 0,25,0,p3:boxf 1,p3-1,p2,p3:boxf p2-1,25,p2,p3
+		gsel p1,p4:gsel 0
+	return
+
+	#deffunc RenameOriginalScreen int p1, str p2
+		gsel p1
+		color TitleBarColor(0),TitleBarColor(1),TitleBarColor(2):boxf 0,0,65535,25
+		color 000,000,000:pos 2,5:mes p2:title p2
+		gsel 0
+	return
+
+*ClickedWnd
+	if wparam=1 {
+		gsel ginfo(2)
+		if mousey<25 : sendmsg hwnd, $A1, 2
+	}
+	return
+
+*PressedMini
+	if ginfo(2)=-1{return}
+	gsel ginfo(2):sendmsg hwnd, $112, $F020
+	gsel 0
+	return
+
+*PressedExit
+	if ginfo(2)=-1{return}
+	if ginfo(2)=0{end}
+	gsel ginfo(2),-1
+	return
+#global

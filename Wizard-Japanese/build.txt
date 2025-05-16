@@ -1,0 +1,10 @@
+_FILEVERSION=1.0.0.0
+_PRODUCTVERSION=1.0.0.0
+Comments=HotNews_Wizard
+CompanyName=ABATBeliever
+FileDescription=Let's_Make_A_News_Summary
+FileVersion=1.0.0.0
+InternalName=HOTNEWS
+LegalCopyright=Copyright(C)2025_ABATBeliever
+OriginalFilename=hotnews.exe
+ProductName=HotNews_Wizard

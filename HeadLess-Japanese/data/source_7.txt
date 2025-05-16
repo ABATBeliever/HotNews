@@ -1,0 +1,5 @@
+ハムスター速報 http://hamusoku.com/index.rdf
+ネタフル http://netafull.net/index.rdf
+らばQ http://labaq.com/index.rdf
+まとめくすアンテナ https://feeds.mtmx.jp/neta/feed.xml
+[EOF]

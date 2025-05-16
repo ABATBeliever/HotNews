@@ -1,0 +1,8 @@
+Yahoo@速報 https://news.yahoo.co.jp/rss/topics/top-picks.xml
+NHK https://www.nhk.or.jp/rss/news/cat0.xml
+日経新聞@速報 https://assets.wor.jp/rss/rdf/nikkei/news.rdf
+産経新聞@速報 https://assets.wor.jp/rss/rdf/sankei/flash.rdf
+読売新聞@新着 https://assets.wor.jp/rss/rdf/yomiuri/latestnews.rdf
+47News@最新ニュース https://assets.wor.jp/rss/rdf/ynnews/news.rdf
+47News地方@最新ニュース https://assets.wor.jp/rss/rdf/ynlocalnews/news.rdf
+[EOF]

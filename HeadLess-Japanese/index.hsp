@@ -1,0 +1,593 @@
+#include "mod_rss.as"
+#include "hspinet.as"
+#packopt version "build.txt"
+#packopt icon    "image.ico"
+#packopt hide    1
+
+randomize
+dim NowScreenID
+dim count
+
+#module "trayicon"
+#define __TRAYICONSAMPLE__ 
+#define WM_TRAYEVENTSTART $900
+#define MAXICONS 16
+#uselib "Kernel32.dll"
+#func GetModuleFileName "GetModuleFileNameA" nullptr,prefstr,int
+#uselib "Shell32.dll"
+#func ExtractIconEx "ExtractIconExA" sptr,int,nullptr,var,int
+#func Shell_NotifyIcon "Shell_NotifyIconA" int,var
+#uselib "user32.dll"
+#func DestroyIcon "DestroyIcon" int
+#deffunc DestroyTrayIcon int iconid 
+dim NOTIFYICONDATA,88/4
+NOTIFYICONDATA = 88, hWnd, iconid
+Shell_NotifyIcon 2, NOTIFYICONDATA
+if hIcon.iconid { DestroyIcon hIcon.iconid : hIcon.iconid = 0 }
+return
+#deffunc CreateTrayIcon str tooltip, int nIconIndex, int iconid
+if hIcon.iconid { DestroyTrayIcon iconid }
+ExtractIconEx icofile, nIconIndex, hIcon.iconid, 1
+dim NOTIFYICONDATA,88/4
+NOTIFYICONDATA = 88, hWnd_, iconid, 7, WM_TRAYEVENTSTART, hIcon.iconid
+poke NOTIFYICONDATA, 4*6, tooltip
+Shell_NotifyIcon 0, NOTIFYICONDATA
+return
+#deffunc PopupBalloonTip str balloonInfoTitle, str balloonInfo, int balloonIcon,int iconid
+    dim NOTIFYICONDATA,488/4
+    NOTIFYICONDATA = 488, hWnd_, iconid, $10
+    poke NOTIFYICONDATA, 4*40, balloonInfo
+    NOTIFYICONDATA.104 = 1000*20
+    poke NOTIFYICONDATA, 4*105, balloonInfoTitle
+    NOTIFYICONDATA.121 = balloonIcon
+    Shell_NotifyIcon 1, NOTIFYICONDATA
+return
+#deffunc SetTrayIconFile str filename 
+sdim icofile,1024
+if filename = "" { GetModuleFileName 1024 : icofile = refstr } 
+else { icofile = filename }
+return 
+#deffunc _init_trayicon_
+mref bmscr,96: hWnd_ = bmscr.13
+dim hIcon,MAXICONS : SetTrayIconFile "" : return
+length
+#deffunc _deinit_trayicon_ onexit
+foreach hIcon : if hIcon.cnt { DestroyTrayIcon cnt } loop : return
+#global
+_init_trayicon_
+#ifdef __TRAYICONSAMPLE__@trayicon
+
+sdim UserName,128:UserName=sysinfo(1):strrep UserName," ",""
+sdim ArticleName:ArticleName="HotNews_by_"+sysinfo(1)
+sdim NoteBuffer,1024
+sdim tmp,1024
+sdim OKField
+
+font "",10
+mes "./data/config.txt"
+notesel NoteBuffer
+exist "./data/config.txt"
+if strsize=-1{dialog "config.txtが見つかりません":end}
+noteload "./data/config.txt"
+noteget tmp,0:split tmp," ",tmp:if stat=2 and tmp(1)!=""{AI_API=tmp(1)}else{dialog "API:(0行)が無効です"}
+noteget tmp,1:split tmp," ",tmp:if stat=2 and tmp(1)!=""{AI_URL=tmp(1)}
+noteget tmp,2:split tmp," ",tmp:if stat=2 and tmp(1)!=""{ArticleName=tmp(1)}
+
+dim OutputFormat,5
+noteget tmp,3:split tmp," ",tmp:if tmp(1)="Enable"{OutputFormat(0)=1:mes "Save as txt"}
+noteget tmp,4:split tmp," ",tmp:if tmp(1)="Enable"{OutputFormat(1)=1:mes "Save as html"}
+noteget tmp,5:split tmp," ",tmp:if tmp(1)="Enable"{OutputFormat(2)=1:mes "Save as md"}
+noteget tmp,6:split tmp," ",tmp:if tmp(1)="Enable"{OutputFormat(3)=1:mes "Save as json"}
+noteget tmp,7:split tmp," ",tmp:if tmp(1)="Enable"{OutputFormat(4)=1:mes "Save as Enable"}
+
+dim ExecuteFormat,5
+noteget tmp,3:split tmp," ",tmp:if tmp(1)="Enable" and tmp(2)="Enable"{ExecuteFormat(0)=1:mes "show txt"}
+noteget tmp,4:split tmp," ",tmp:if tmp(1)="Enable" and tmp(2)="Enable"{ExecuteFormat(1)=1:mes "show html"}
+noteget tmp,5:split tmp," ",tmp:if tmp(1)="Enable" and tmp(2)="Enable"{ExecuteFormat(2)=1:mes "show md"}
+noteget tmp,6:split tmp," ",tmp:if tmp(1)="Enable" and tmp(2)="Enable"{ExecuteFormat(3)=1:mes "show json"}
+noteget tmp,7:split tmp," ",tmp:if tmp(1)="Enable" and tmp(2)="Enable"{ExecuteFormat(4)=1:mes "show csv"}
+
+dim IsEnableNotify
+dim IsEnableFTP
+noteget tmp,08:split tmp," ",tmp:if tmp(1)="Enable"{IsEnableNotify=1}
+noteget tmp,09:split tmp," ",tmp:if tmp(1)="Enable"{IsEnableFTP=1}
+noteget tmp,10:split tmp," ",tmp:if stat=2{FTP_URL=tmp(1)}
+noteget tmp,11:split tmp," ",tmp:if stat=2{FTP_USR=tmp(1)}
+noteget tmp,12:split tmp," ",tmp:if stat=2{FTP_PWD=tmp(1)}
+noteget tmp,13:split tmp," ",tmp:if stat=2{FTP_FDR=tmp(1)}
+mes "OK\n"
+
+if IsEnableNotify=1{
+SetTrayIconFile "user32.dll"
+CreateTrayIcon "",1,0
+PopupBalloonTip "HotNews-HeadLess","HotNewsは処理を開始します",2,0
+}
+
+mes "./data/feedfield.txt"
+exist "./data/feedfield.txt"
+if strsize=-1{dialog "./data/feedfield.txt が見つかりません":end}
+noteload "./data/feedfield.txt"
+dim FeedFieldEnable,notemax
+sdim FeedFieldList,,notemax
+repeat notemax
+	noteget tmp,cnt
+	FeedFieldList(cnt)=tmp
+	exist "./data/source_"+cnt+".txt"
+	if strsize=-1{dialog "./data/source_"+str(cnt)+".txt が見つかりません":end}
+	mes "* ./data/source_"+str(cnt)+".txt "+tmp
+loop
+mes "OK\n"
+
+repeat length(FeedFieldList)
+	FeedFieldEnable(cnt)=1
+loop
+
+dim  FeedUseList,count,16
+sdim FeedDataName,count,16
+sdim FeedDataURL ,count,16
+count=0
+
+mes "URLロード"
+repeat length(FeedFieldList)
+	if FeedFieldEnable(cnt)=1{
+		noteload "./data/source_"+str(cnt)+".txt"
+		repeat notemax
+			noteget tmp,cnt
+			if tmp="[EOF]"{break}else:if tmp=""{break}
+			split tmp," ",tmp
+			if stat!=2{mes "Notice:破損したエントリ "+str(cnt+1)+"行目 空白で分けられるフィード名が2つではありません":end}
+			if tmp!=""{
+				FeedDataName(count,cnt)=tmp(0)
+				FeedDataName(count,cnt+1)="[EOF]"
+				FeedDataURL (count,cnt)=tmp(1)
+			}
+		loop
+		count++
+	}
+loop
+mes "OK\n"
+
+mes "Fetch Article"
+sdim tmp
+dim a:a=0
+dim b:b=0
+dim Selected
+
+repeat length(FeedFieldList)
+	if FeedFieldEnable(cnt)!=1{continue}
+	if tmp=""{tmp=FeedFieldList(cnt)+" のフィード"}else{tmp=tmp+"\n\n"+FeedFieldList(cnt)+" のフィード"}
+	repeat
+		if FeedDataName(a,b)!="[EOF]"{
+			tmp=tmp+"\n"+FeedDataName(a,b)
+		}else{
+			break
+		}
+		b++
+	loop
+	a++:b=0
+loop
+
+dim a:a=0
+dim b:b=0
+dim c:c=0
+sdim tmp
+sdim tmp2
+sdim FieldChangeCNT:FieldChangeCNT="0"
+sdim ProgressStat
+sdim ArticleCNTStat
+sdim RealArticleTitle
+sdim RealArticleURL
+sdim url
+
+repeat length(FeedFieldList)
+	if FeedFieldEnable(cnt)!=1{continue}
+	repeat
+		if FeedDataName(a,b)!="[EOF]"{
+			tmp="取得:"+FeedDataName(a,b)+"\n"+tmp
+			await 1
+			url=FeedDataURL(a,b)
+			rssload desc,link,url,64
+			repeat length(desc)
+				RealArticleTitle(length(RealArticletitle))=desc(cnt)
+				RealArticleURL(length(RealArticleURL))=link(cnt)
+			loop
+			if length(RealArticleTitle)!=length(RealArticleURL){dialog "致命的な不整合です":end}
+		}else{
+			break
+		}
+		b++
+	loop
+	a++:b=0
+	FieldChangeCNT=FieldChangeCNT+"@"+str(length(RealArticleURL))
+loop
+
+sdim tmp
+tmp="取得された記事タイトル"
+repeat length(RealArticleTitle)
+	tmp=tmp+" "+RealArticleTitle(cnt)
+loop
+
+split FieldChangeCNT,"@",FieldChangeCNT
+sdim Selected
+
+dim a
+dim b
+dim tmp
+sdim AISampleURL
+
+repeat length(FieldChangeCNT)-1
+	a=int(FieldChangeCNT(cnt))+1
+	b=int(FieldChangeCNT(cnt+1))
+	repeat 10
+		tmp=rnd(b-a)+a
+		Selected(length(Selected))=RealArticleTitle(tmp)
+		AISampleURL(length(ALSampleURL))=RealArticleURL(tmp)
+	loop
+loop
+mes "OK\n"
+
+tmp=""
+Prompt="あなたは、組み込みソフト向けのAPIから呼び出されました。改行や強調(Bold)は禁止。これから列挙するニュースの見出しから、それぞれの分野の日刊レポートを生成してください。分野の中でも話題ごとにカンマを使って5つ程度作るように。口調はニュースのようにして、それぞれの話題で感想を混ぜるなどして。構成は_分野名1,分野1にあたる話題1,話題2,話題3,話題4,話題5@分野名2,分野2にあたる話題1,話題2,話題3,話題4,話題5..._という風の構文を徹底して、多少の自分の意見を入れて。話題は"+OKField+"の合計"
+split OKField,"@",OKField
+Prompt=Prompt+str(length(OKField)-1)+"つです。"
+
+repeat length(Selected)-1
+	if cnt\10=0 and cnt/10+1<length(OKField){tmp=tmp+" "+OKField(cnt/10+1)}
+	tmp=tmp+"<"+str(cnt\10+1)+":"+Selected(cnt+1)+">"
+loop
+
+
+Prompt=Prompt+tmp
+
+sdim tmp
+
+#module Extention_hspinet
+#deffunc jsongetd var aVar, str aName, var aPtr
+    jsongetobj@ p, aName, aPtr
+    jsonout@ sValue, p
+    aVar = Double(sValue)
+    return 
+#defcfunc getValue var aPjs, str aKey
+    p = aPjs : buf = aKey : result = "" : sdim tokens
+    split buf, ".", tokens
+    foreach tokens : token = tokens.cnt
+        if token = "" : continue
+        if strmid(token, 0, 1) = "[" {
+            subscript = Int( strmid(token, 1, strlen(token)-2) )
+            jsonnext@ p, p, 2
+            repeat subscript
+                jsonnext@ p, p, 0
+            loop
+        } else {
+            jsongetobj@ p, token, p
+        }
+    loop
+    jsonout@ result, p
+    return result
+#global
+
+#module
+#defcfunc stringProcess str _str
+    string = _str
+    string = strtrim(string, , '"')
+	strrep string, "\\n", ""
+	return string
+#global
+
+GEMINI_API_KEY = AI_KEY
+url = GEMINI_API_KEY
+text=Prompt
+jsonRequest = "{\"contents\":[{\"parts\":[{\"text\":\""+text+"\"}]}]}"
+nkfcnv jsonRequest, jsonRequest ,"Sw"
+
+netinit
+netheader "Content-Type: application/json"
+neturl AI_URL+AI_API
+url=""
+
+mes "Asking AI"
+dim a:a=0
+
+netrequest_post url, jsonRequest
+repeat
+    netexec res
+    if res:break
+    await
+loop
+mes "OK\n"
+
+netgetv data
+nkfcnv data, data ,"Ws"
+jsonopen js, data
+
+res_txt=stringProcess(getValue(js, ".candidates.[0].content.parts.[0].text"))
+jsonclose
+
+res2=res_txt
+
+if res2=""{dialog "取得失敗です。AIのAPIキーは適切ですか?"+data:end}
+
+
+split res2,"@",res2
+
+sdim time:time=""+gettime(0)+"/"+gettime(1)+"/"+gettime(3)+" "+gettime(4)+":"+gettime(5)+":"+gettime(6)
+day=""+gettime(0)+"-"+gettime(1)+"-"+gettime(3)+"-"+gettime(4)+"-"+gettime(5)+"-"+gettime(6)
+dir="Output"
+
+if OutputFormat(0)=1{
+	sdim res2:res2=res_txt:sdim tmp:sdim buf
+	buf=ArticleName+"\nGenerated by HotNews in "+time+"\n\n"
+	strrep res2,"_",""
+	strrep res2,"@","\n\n"
+	strrep res2,",","\n・"
+	buf=buf+res2
+
+sdim tmp
+dim a:a=0
+dim b:b=0
+repeat length(FeedFieldList)
+	if FeedFieldEnable(cnt)!=1{continue}
+	repeat
+		if FeedDataName(a,b)!="[EOF]"{
+			tmp=tmp+" / "+FeedDataName(a,b)
+		}else{
+			break
+		}
+		b++
+	loop
+	a++:b=0
+loop
+	buf=buf+"\n\nPowered by "+tmp
+
+	notesel buf
+	notesave ArticleName+"_"+day+".txt"
+	repeat
+		await 500
+		exist ArticleName+"_"+day+".txt"
+		if strsize!=-1{break}
+	loop
+	dir=dir+"\n[出力] .txt 形式 プレーン      > "+ArticleName+".txt"
+}
+
+if OutputFormat(1)=1{
+	sdim res2:res2=res_txt:sdim tmp:sdim buf
+	buf={"<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="ANSI">
+  <title>"}
+	buf=buf+ArticleName+{"</title>
+  <style>
+    body {
+      background-color: #fff;
+      color: #111;
+      font-family: 'Roboto', sans-serif;
+      line-height: 1.8;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 3em;
+      text-align: center;
+      margin-bottom: 40px;
+      border-bottom: 2px solid #111;
+      padding-bottom: 10px;
+      letter-spacing: 1px;
+    }
+    .article {
+      margin-bottom: 40px;
+      border-bottom: 1px solid #ccc;
+      padding-bottom: 20px;
+    }
+    .headline {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5em;
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: #000;
+    }
+    .content {
+      font-size: 1em;
+      color: #333;
+    }
+    @media screen and (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
+      h1 {
+        font-size: 2em;
+      }
+      .headline {
+        font-size: 1.2em;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>"}
+	buf=buf+ArticleName+{"</h1>
+  <h4>"}
+	buf=buf+time+" 発行<br>※このメディアはHotNewsを通じて、AIを用いて制作されました。<br>This media was generated by AI and HotNews.</h4>"
+	strrep res2,"_",""
+	split res2,"@",res2
+	repeat length(res2)
+		split res2(cnt),",",tmp
+		repeat length(tmp)
+			if cnt=0{
+				buf+{"  <div class="article">
+    <div class="headline">"}+tmp(0)+{"</div>
+    <div class="content">"}
+			}else{
+				buf=buf+"<li>"+tmp(cnt)+"</li>"
+			}
+		loop
+		buf=buf+"</div></div>"
+	loop
+	buf=buf+"\n<h4>Powered by</h4><p>"
+
+sdim tmp
+dim a:a=0
+dim b:b=0
+repeat length(FeedFieldList)
+	if FeedFieldEnable(cnt)!=1{continue}
+	repeat
+		if FeedDataName(a,b)!="[EOF]"{
+			tmp=tmp+"<br>"+FeedDataName(a,b)
+		}else{
+			break
+		}
+		b++
+	loop
+	a++:b=0
+loop
+
+	buf=buf+tmp+"</p></div></body></html>"
+	notesel buf
+	notesave ArticleName+"_"+day+".html"
+	repeat
+		await 500
+		exist ArticleName+"_"+day+".html"
+		if strsize!=-1{break}
+	loop
+	dir=dir+ "\n[出力] .html形式 ブラウザ閲覧用 > "+ArticleName+".txt"
+}
+
+if OutputFormat(2)=1{
+	sdim res2:res2=res_txt:sdim tmp:sdim buf
+	buf="# "+ArticleName+"\nGenerated by HotNews in "+time+"\n"
+	strrep res2,"_",""
+	split res2,"@",res2
+	repeat length(res2)
+		split res2(cnt),",",tmp
+		repeat length(tmp)
+			if cnt=0{
+				buf=buf+"## "+tmp(0)+"\n"
+			}else{
+				buf=buf+"- "+tmp(cnt)+"\n"
+			}
+		loop
+	loop
+	notesel buf
+	notesave ArticleName+"_"+day+".md"
+	repeat
+		await 500
+		exist ArticleName+"_"+day+".md"
+		if strsize!=-1{break}
+	loop
+	dir=dir+ "\n[出力] .md  形式 Notion等向け > "+ArticleName+".md"
+}
+
+if OutputFormat(3)=1{
+	sdim res2:res2=res_txt:sdim tmp:sdim buf
+	buf="{\n \"articlename\":\""+ArticleName+"\",\n \"sourse\": \"HotNews\",\n \"time\": \""+time+"\",\n \"articles\": [\n"
+	strrep res2,"_",""
+	split res2,"@",res2
+	dim a
+	repeat length(res2)
+		a=cnt
+		split res2(cnt),",",tmp
+		repeat length(tmp)
+			if cnt=0{
+				if a=0{
+					buf=buf+"\n  {\n   \"category\": \""+tmp(0)+"\",\n"
+				}else{
+					buf=buf+",\n  {\n   \"category\": \""+tmp(0)+"\",\n"
+				}
+			}else:if cnt=length(tmp){
+				buf=buf+"   \"title\": \""+tmp(cnt)+"\""
+			}else{
+				buf=buf+"   \"title\": \""+tmp(cnt)+"\",\n"
+			}
+		loop
+		buf=buf+"  }"
+	loop
+	buf=buf+"\n ]\n}"
+	notesel buf
+	notesave ArticleName+"_"+day+".json"
+	repeat
+		await 500
+		exist ArticleName+"_"+day+".json"
+		if strsize!=-1{break}
+	loop
+	dir=dir+ "\n[出力] .json形式 組み込み向け > "+ArticleName+".json"
+}
+
+if OutputFormat(4)=1{
+	sdim res2:res2=res_txt:sdim tmp:sdim buf
+	buf=ArticleName+",By HotNews,"+time+"\n,カテゴリ,内容"
+	strrep res2,"_",""
+
+split res2,"@",res2
+repeat length(res2)
+	split res2(cnt),",",tmp
+	repeat length(tmp)
+		if cnt!=0{
+			buf=buf+"\n"+tmp(0)+","+tmp(cnt)
+		}
+	loop
+loop
+
+sdim tmp
+dim a:a=0
+dim b:b=0
+repeat length(FeedFieldList)
+	if FeedFieldEnable(cnt)!=1{continue}
+	repeat
+		if FeedDataName(a,b)!="[EOF]"{
+			tmp=tmp+","+FeedDataName(a,b)
+		}else{
+			break
+		}
+		b++
+	loop
+	a++:b=0
+loop
+	buf=buf+"\n提供リスト"+tmp
+
+	notesel buf
+	notesave ArticleName+"_"+day+".csv"
+	repeat
+		await 500
+		exist ArticleName+"_"+day+".csv"
+		if strsize!=-1{break}
+	loop
+	dir=dir+ "\n[出力] .csv 形式 Excel向け      > "+ArticleName+".csv"
+}
+dir=dir+""
+
+if ExecuteFormat(0)=1{exec ""+ArticleName+"_"+day+".txt",,"open"}
+if ExecuteFormat(1)=1{exec ""+ArticleName+"_"+day+".html",,"open"}
+if ExecuteFormat(2)=1{exec ""+ArticleName+"_"+day+".md",,"open"}
+if ExecuteFormat(3)=1{exec ""+ArticleName+"_"+day+".json",,"open"}
+if ExecuteFormat(4)=1{exec ""+ArticleName+"_"+day+".csv",,"open"}
+mes dir
+mes "\n\nAll Green"
+await 500
+
+if IsEnableFTP=0 or OutputFormat(1)=0{
+if IsEnableNotify=0{end}
+SetTrayIconFile "user32.dll"
+CreateTrayIcon "",1,0
+PopupBalloonTip "HotNews-HeadLess","HotNewsは処理を終了しました。",2,0
+end
+}
+
+mes "FTP"
+ftpopen FTP_URL,FTP_USR,FTP_PWD
+if stat : dialog "ftp接続エラー" : end
+mes "Connected"
+
+ftpdir start_dir,FTP_FDR
+
+ftpput ""+ArticleName+"_"+day+".html"
+if stat : dialog "アップロードエラー" : ftpclose : end
+
+ftpclose
+if IsEnableNotify=1{
+SetTrayIconFile "user32.dll"
+CreateTrayIcon "",1,0
+PopupBalloonTip "HotNews-HeadLess","HotNewsは処理を終了しました。",2,0
+}
+end

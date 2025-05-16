@@ -1,0 +1,9 @@
+産経新聞@エンタメ https://assets.wor.jp/rss/rdf/sankei/entertainments.rdf
+読売新聞@エンタメ・文化 https://assets.wor.jp/rss/rdf/yomiuri/culture.rdf
+47News@文化 https://assets.wor.jp/rss/rdf/ynnews/culture.rdf
+47News地域@文化 https://assets.wor.jp/rss/rdf/ynlocalnews/culture.rdf
+まいどなニュース@おもしろ https://assets.wor.jp/rss/rdf/maidona/omoshiro.rdf
+まいどなニュース@もふもふ https://assets.wor.jp/rss/rdf/maidona/mofumofu.rdf
+まいどなニュース@マンガ https://assets.wor.jp/rss/rdf/maidona/manga.rdf
+まいどなニュース@クイズ https://assets.wor.jp/rss/rdf/maidona/quiz.rdf
+[EOF]

@@ -1,0 +1,8 @@
+日経新聞@地域 https://assets.wor.jp/rss/rdf/nikkei/local.rdf
+日経新聞@社会 https://assets.wor.jp/rss/rdf/nikkei/society.rdf
+BloomBurg@国内ニュース https://assets.wor.jp/rss/rdf/bloomberg/domestic.rdf
+読売新聞@社会 https://assets.wor.jp/rss/rdf/yomiuri/national.rdf
+読売新聞@社説 https://assets.wor.jp/rss/rdf/yomiuri/editorial.rdf
+47News@社会 https://assets.wor.jp/rss/rdf/ynnews/national.rdf
+47News地域@社会 https://assets.wor.jp/rss/rdf/ynlocalnews/national.rdf
+[EOF]

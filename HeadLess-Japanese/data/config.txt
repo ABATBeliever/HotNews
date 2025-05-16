@@ -1,0 +1,14 @@
+API______<APIを入力>
+URL______ https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=
+Name_____ HotNews
+txt______ Enable Disable
+html_____ Enable Enable
+md_______ Enable Disable
+json_____ Enable Disable
+csv______ Enable Disable
+Notify___ Enable
+FTP-USE__ Disable
+FTP-URL__ 
+FTP-USR__ 
+FTP-PWD__ 
+FTP-FDR__ 

@@ -1,0 +1,612 @@
+#include "mod_rss.as"
+#include "hspinet.as"
+#packopt version "build.txt"
+#packopt icon    "image.ico"
+#packopt hide    1
+
+#define StartWindowXint 640
+#define StartWindowYint 480
+
+randomize
+dim NowScreenID
+dim count
+
+sdim UserName,128:UserName=sysinfo(1):strrep UserName," ",""
+sdim ArticleName,64:ArticleName="HotNews_by_"+sysinfo(1)
+sdim NoteBuffer,1024
+sdim tmp,1024
+sdim OKField
+
+#include "OriginalScreen.hsp"
+
+SetOriginalScreenDef 129,129,129,0
+goto *Screen0
+//======================================================================================================
+*SetButtonGoSub
+	objsize 75,30
+	pos 400,420:button "<-",*GoScreenPrv:ButtonPrv=stat
+	pos 480,420:button "->",*GoScreenAdv:ButtonAdv=stat
+	if NowScreenID<1{objenable ButtonPrv,0}
+	if NowScreenID>5{objenable ButtonAdv,0}
+	if NowScreenID>2{objenable ButtonPrv,0}
+	if NowScreenID=6{objenable ButtonAdv,1:objprm ButtonAdv,"Exit"}
+return
+//======================================================================================================
+*GoScreenPrv
+	if NowScreenID=1{
+		dialog "Restart Wizard?",2
+		if stat=6{goto *Screen0}
+	}
+	if NowScreenID=2{
+		goto *Screen1
+	}
+	stop
+*GoScreenAdv
+	if NowScreenID=0{goto *Screen1}
+	if NowScreenID=1{
+		tmp="":count=0
+		repeat length(FeedFieldList)
+			if FeedFieldEnable(cnt)=1{OKField=OKField+"@"+FeedFieldList(cnt):count++}
+		loop
+		if count<2{dialog "Please choice at least two.":goto *Screen1}
+		goto *Screen2
+	}
+	if NowScreenID=2{goto *Screen3}
+	if NowScreenID=3{goto *Screen4}
+	if NowScreenID=4{
+		if instr(AI_URL,0,"https://")!=0{dialog "AI URL isn't correct.":stop}
+		if AI_KEY=""{dialog "API-Key isn't correct":stop}
+		dialog "We will call AI\n\nAI URL\n"+AI_URL+"\nAI APIKey :***",2
+		if stat=6{goto *Screen5}else{stop}
+	}
+	if NowScreenID=5{
+		if OutputFormat(0)=0 and OutputFormat(1)=0 and OutputFormat(2)=0 and OutputFormat(3)=0 and OutputFormat(4)=0{dialog "最低でも1つのフォーマットは選んでください。":stop}
+		goto *Screen6
+	}
+	if NowScreenID=6{end}
+	stop
+//======================================================================================================
+*Screen0
+NowScreenID=0
+WriteOriginalScreen 0,int(StartWindowXint),int(StartWindowYint),1,1,1,"HotNews- You are publisher (0/6)"
+pos  20, 40:font "",20:mes "HotNews Wizard - You are publisher
+pos  20,100:font "",16:mes "Loading Data"
+notesel NoteBuffer
+mes "・Fetch (data/feedfield.txt)"
+	exist "./data/feedfield.txt"
+	if strsize=-1{dialog "./data/feedfield.txt isn't found"}else{mes ">Found["+str(strsize)+"byte]"}
+	noteload "./data/feedfield.txt"
+	mes "・Valid recode "+str(notemax)
+	dim FeedFieldEnable,notemax
+	sdim FeedFieldList,,notemax
+	repeat notemax
+		noteget tmp,cnt
+		FeedFieldList(cnt)=tmp
+		exist "./data/source_"+cnt+".txt"
+		if strsize=-1{dialog "./data/source_"+str(cnt)+".txt isn't found"}
+		mes "* ./data/source_"+str(cnt)+".txt >Found["+str(strsize)+"byte] Name "+tmp
+	loop
+mes "\nOK"
+goto *GoScreenAdv
+stop
+//======================================================================================================
+*Screen1
+NowScreenID=1
+WriteOriginalScreen 0,int(StartWindowXint),int(StartWindowYint),1,1,1,"HotNews- You are publisher (1/6) "+__date__
+pos  20, 40:font "",20:mes "HotNews Wizard - You are publisher"
+pos  20,100:font "",16:mes "Enter article name	:"
+pos 300,100:objsize 280,20:input ArticleName
+pos  20,120:font "",16:mes "Select two or more fields"
+
+objsize 280,20
+repeat length(FeedFieldList)
+	FeedFieldEnable(cnt)=1
+	pos 300,120+20*cnt:chkbox FeedFieldList(cnt),FeedFieldEnable(cnt)
+loop
+
+gosub *SetButtonGoSub
+stop
+//======================================================================================================
+*Screen2
+NowScreenID=2
+WriteOriginalScreen 0,int(StartWindowXint),int(StartWindowYint),1,1,1,"HotNews- You are publisher (2/6)"
+pos  20, 40:font "",20:mes "HotNews Wizard - You are publisher"
+pos  20,100:font "",16:mes "Loading Data\n"
+
+dim  FeedUseList,count,16
+sdim FeedDataName,count,16
+sdim FeedDataURL ,count,16
+count=0
+
+repeat length(FeedFieldList)
+	if FeedFieldEnable(cnt)=1{
+		mes ""+FeedFieldList(cnt)+" *"
+		noteload "./data/source_"+str(cnt)+".txt"
+		repeat notemax
+			noteget tmp,cnt
+			if tmp="[EOF]"{break}else:if tmp=""{break}
+			split tmp," ",tmp
+			if stat!=2{mes "Notice:"+str(cnt+1)+" Error":stop}
+			if tmp!=""{
+				FeedDataName(count,cnt)=tmp(0)
+				FeedDataName(count,cnt+1)="[EOF]"
+				FeedDataURL (count,cnt)=tmp(1)
+			}
+		loop
+		count++
+	}else{
+		mes ""+FeedFieldList(cnt)+" [ignore]"
+	}
+loop
+
+WriteOriginalScreen 0,int(StartWindowXint),int(StartWindowYint),1,1,1,"HotNews- You are publisher (2/6)"
+pos  20, 40:font "",20:mes "HotNews Wizard - You are publisher"
+pos  20, 80:font "",16:mes "Data Sourse List"
+
+sdim tmp
+dim a:a=0
+dim b:b=0
+dim Selected
+
+objsize 600,200
+
+repeat length(FeedFieldList)
+	if FeedFieldEnable(cnt)!=1{continue}
+	if tmp=""{tmp=FeedFieldList(cnt)+" feed"}else{tmp=tmp+"\n\n"+FeedFieldList(cnt)+" feed"}
+	repeat
+		if FeedDataName(a,b)!="[EOF]"{
+			tmp=tmp+"\n"+FeedDataName(a,b)
+		}else{
+			break
+		}
+		b++
+	loop
+	a++:b=0
+loop
+
+listbox Selected,,""
+objprm stat,tmp
+
+gosub *SetButtonGoSub
+stop
+//======================================================================================================
+*Screen3
+NowScreenID=3
+WriteOriginalScreen 0,int(StartWindowXint),int(StartWindowYint),1,1,1,"HotNews- You are publisher (3/6)"
+pos  20, 40:font "",20:mes "HotNews Wizard - You are publisher"
+pos  20, 80:font "",16:mes "fetching RSS"
+
+dim a:a=0
+dim b:b=0
+sdim tmp
+sdim tmp2
+sdim FieldChangeCNT:FieldChangeCNT="0"
+sdim ProgressStat
+sdim ArticleCNTStat
+sdim RealArticleTitle
+sdim RealArticleURL
+sdim url
+
+objsize 600,300:mesbox tmp:ProgressStat=stat  :objenable ProgressStat  ,1
+objsize 600, 20:input tmp2:ArticleCNTStat=stat:objenable ArticleCNTStat,1
+
+repeat length(FeedFieldList)
+	if FeedFieldEnable(cnt)!=1{continue}
+	repeat
+		if FeedDataName(a,b)!="[EOF]"{
+			tmp="fetched:"+FeedDataName(a,b)+"\n"+tmp
+			await 1
+			objprm ProgressStat,tmp
+			url=FeedDataURL(a,b)
+			rssload desc,link,url,64
+			repeat length(desc)
+				RealArticleTitle(length(RealArticletitle))=desc(cnt)
+				RealArticleURL(length(RealArticleURL))=link(cnt)
+			loop
+			if length(RealArticleTitle)!=length(RealArticleURL){dialog "Critical DB Error":end}
+			objprm ArticleCNTStat,"Total: "+str(length(RealArticleURL))
+		}else{
+			break
+		}
+		b++
+	loop
+	a++:b=0
+	FieldChangeCNT=FieldChangeCNT+"@"+str(length(RealArticleURL))
+loop
+
+objprm ProgressStat,"SUCCESS\nTotal "+length(RealArticleTitle)+"\n\n"+tmp
+
+sdim tmp
+tmp="Title"
+repeat length(RealArticleTitle)
+	tmp=tmp+" "+RealArticleTitle(cnt)
+loop
+gosub *SetButtonGoSub
+stop
+//======================================================================================================
+*Screen4
+NowScreenID=4
+WriteOriginalScreen 0,int(StartWindowXint),int(StartWindowYint),1,1,1,"HotNews- You are publisher (4/6)"
+pos  20, 40:font "",20:mes "HotNews Wizard - You are publisher"
+pos  20, 80:font "",16:mes ""
+
+pos 100,100:font "",8
+split FieldChangeCNT,"@",FieldChangeCNT
+sdim Selected
+
+dim a
+dim b
+dim tmp
+sdim AISampleURL
+
+repeat length(FieldChangeCNT)-1
+	a=int(FieldChangeCNT(cnt))+1
+	b=int(FieldChangeCNT(cnt+1))
+	repeat 10
+		tmp=rnd(b-a)+a
+		Selected(length(Selected))=RealArticleTitle(tmp)
+		AISampleURL(length(ALSampleURL))=RealArticleURL(tmp)
+	loop
+loop
+
+tmp=""
+Prompt="あなたは、組み込みソフト向けのAPIから呼び出されました。改行や強調(Bold)は禁止。これから列挙するニュースの見出しから、それぞれの分野の日刊レポートを生成してください。但し英語で。分野の中でも話題ごとにカンマを使って5つ程度作るように。口調はニュースのようにして、それぞれの話題で感想を混ぜるなどして。構成は_分野名1,分野1にあたる話題1,話題2,話題3,話題4,話題5@分野名2,分野2にあたる話題1,話題2,話題3,話題4,話題5..._という風の構文を徹底して、多少の自分の意見を入れて。話題は"+OKField+"の合計"
+split OKField,"@",OKField
+Prompt=Prompt+str(length(OKField)-1)+"つです。"
+
+repeat length(Selected)-1
+	if cnt\10=0 and cnt/10+1<length(OKField){tmp=tmp+" "+OKField(cnt/10+1)}
+	tmp=tmp+"<"+str(cnt\10+1)+":"+Selected(cnt+1)+">"
+loop
+
+pos  20,100:font "",16:mes "AI Setting"
+
+Prompt=Prompt+tmp
+pos  20,120:mes "Prompt: "
+
+sdim tmp
+objsize 500,160:pos 100,120:mesbox tmp
+objenable stat,0
+objprm stat,Prompt
+
+objsize 500,20
+pos 20,290:mes "AI URL(default:Gemini 2.0 Flash): "
+sdim AI_URL:AI_URL="https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key="
+pos 20,310:input AI_URL
+
+pos 20,350:mes "API Key:"
+sdim AI_KEY:AI_KEY=""
+pos 20,370:input AI_KEY:hInput = objinfo(stat, 2):sendmsg hInput, $CC, '*'
+
+pos 20,370:mes "※Do not share API key"
+gosub *SetButtonGoSub
+stop
+//======================================================================================================
+*Screen5
+NowScreenID=5
+WriteOriginalScreen 0,int(StartWindowXint),int(StartWindowYint),1,1,1,"HotNews- You are publisher (5/6)"
+pos  20, 40:font "",20:mes "HotNews Wizard - You are publisher"
+pos  20, 80:font "",16:mes "Prepare..."
+
+#module Extention_hspinet
+#deffunc jsongetd var aVar, str aName, var aPtr
+    jsongetobj@ p, aName, aPtr
+    jsonout@ sValue, p
+    aVar = Double(sValue)
+    return 
+#defcfunc getValue var aPjs, str aKey
+    p = aPjs : buf = aKey : result = "" : sdim tokens
+    split buf, ".", tokens
+    foreach tokens : token = tokens.cnt
+        if token = "" : continue
+        if strmid(token, 0, 1) = "[" {
+            subscript = Int( strmid(token, 1, strlen(token)-2) )
+            jsonnext@ p, p, 2
+            repeat subscript
+                jsonnext@ p, p, 0
+            loop
+        } else {
+            jsongetobj@ p, token, p
+        }
+    loop
+    jsonout@ result, p
+    return result
+#global
+
+#module
+#defcfunc stringProcess str _str
+    string = _str
+    string = strtrim(string, , '"')
+	strrep string, "\\n", ""
+	return string
+#global
+
+GEMINI_API_KEY = AI_KEY
+url = GEMINI_API_KEY
+text=Prompt
+jsonRequest = "{\"contents\":[{\"parts\":[{\"text\":\""+text+"\"}]}]}"
+nkfcnv jsonRequest, jsonRequest ,"Sw"
+
+netinit
+netheader "Content-Type: application/json"
+neturl AI_URL
+
+mes "Asking AI..."
+
+dim a:a=0
+
+netrequest_post url, jsonRequest
+repeat
+    netexec res
+    if res:break
+    await
+loop
+mes "OK"
+
+netgetv data
+nkfcnv data, data ,"Ws"
+jsonopen js, data
+
+res_txt=stringProcess(getValue(js, ".candidates.[0].content.parts.[0].text"))
+jsonclose
+
+res2=res_txt
+
+if res2=""{dialog "Invalid return.\n"+data:goto *Screen4}
+	
+WriteOriginalScreen 0,int(StartWindowXint),int(StartWindowYint),1,1,1,"HotNews- You are publisher (5/6)"
+pos  20, 40:font "",20:mes "HotNews Wizard - You are publisher"
+
+split res2,"@",res2
+if length(res2)!=(length(OKField)-1){
+	dialog "AI Format Error\nRetry(Y)/Ignore&Continue(N)",2
+	if stat=6{goto *Screen5}
+}
+
+pos  20, 80:font "",16:mes "Output Format Select"
+
+OutputFormat(0)=1:OutputFormat(1)=1
+objsize 280,20
+pos 300,120:chkbox ".txt "   ,OutputFormat(0)
+pos 300,140:chkbox ".html"   ,OutputFormat(1)
+pos 300,160:chkbox ".md  "   ,OutputFormat(2)
+pos 300,180:chkbox ".json"   ,OutputFormat(3)
+pos 300,200:chkbox ".csv "   ,OutputFormat(4)
+gosub *SetButtonGoSub
+stop
+//======================================================================================================
+*Screen6
+NowScreenID=6
+WriteOriginalScreen 0,int(StartWindowXint),int(StartWindowYint),1,1,1,"HotNews- You are publisher (6/6)"
+pos  20, 40:font "",20:mes "HotNews Wizard - You are publisher"
+pos  20,100
+
+sdim time:time=""+gettime(0)+"/"+gettime(1)+"/"+gettime(3)+" "+gettime(4)+":"+gettime(5)+":"+gettime(6)
+tmp="":objsize 600,300:mesbox tmp:ProgressStat=stat  :objenable ProgressStat  ,1
+dir="Task..."
+
+if OutputFormat(0)=1{
+	sdim res2:res2=res_txt:sdim tmp:sdim buf
+	buf=ArticleName+"\nGenerated by HotNews in "+time+"\n\n"
+	strrep res2,"_",""
+	strrep res2,"@","\n\n"
+	strrep res2,",","\n・"
+	buf=buf+res2
+
+sdim tmp
+dim a:a=0
+dim b:b=0
+repeat length(FeedFieldList)
+	if FeedFieldEnable(cnt)!=1{continue}
+	repeat
+		if FeedDataName(a,b)!="[EOF]"{
+			tmp=tmp+" / "+FeedDataName(a,b)
+		}else{
+			break
+		}
+		b++
+	loop
+	a++:b=0
+loop
+	buf=buf+"\n\nPowered by "+tmp
+
+	notesel buf
+	notesave ArticleName+".txt"
+	dir=dir+"\n[出力] .txt 形式 プレーン      > "+ArticleName+".txt"
+	objprm ProgressStat,dir
+}
+
+if OutputFormat(1)=1{
+	sdim res2:res2=res_txt:sdim tmp:sdim buf
+	buf={"<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="ANSI">
+  <title>"}
+	buf=buf+ArticleName+{"</title>
+  <style>
+    body {
+      background-color: #fff;
+      color: #111;
+      font-family: 'Roboto', sans-serif;
+      line-height: 1.8;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 3em;
+      text-align: center;
+      margin-bottom: 40px;
+      border-bottom: 2px solid #111;
+      padding-bottom: 10px;
+      letter-spacing: 1px;
+    }
+    .article {
+      margin-bottom: 40px;
+      border-bottom: 1px solid #ccc;
+      padding-bottom: 20px;
+    }
+    .headline {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5em;
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: #000;
+    }
+    .content {
+      font-size: 1em;
+      color: #333;
+    }
+    @media screen and (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
+      h1 {
+        font-size: 2em;
+      }
+      .headline {
+        font-size: 1.2em;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>"}
+	buf=buf+ArticleName+{"</h1>
+  <h4>"}
+	buf=buf+time+" 発行<br>※このメディアはHotNewsを通じて、AIを用いて制作されました。<br>This media was generated by AI and HotNews.</h4>"
+	strrep res2,"_",""
+	split res2,"@",res2
+	repeat length(res2)
+		split res2(cnt),",",tmp
+		repeat length(tmp)
+			if cnt=0{
+				buf+{"  <div class="article">
+    <div class="headline">"}+tmp(0)+{"</div>
+    <div class="content">"}
+			}else{
+				buf=buf+"<li>"+tmp(cnt)+"</li>"
+			}
+		loop
+		buf=buf+"</div></div>"
+	loop
+	buf=buf+"\n<h4>Powered by</h4><p>"
+
+sdim tmp
+dim a:a=0
+dim b:b=0
+repeat length(FeedFieldList)
+	if FeedFieldEnable(cnt)!=1{continue}
+	repeat
+		if FeedDataName(a,b)!="[EOF]"{
+			tmp=tmp+"<br>"+FeedDataName(a,b)
+		}else{
+			break
+		}
+		b++
+	loop
+	a++:b=0
+loop
+
+	buf=buf+tmp+"</p></div></body></html>"
+	notesel buf
+	notesave ArticleName+".html"
+	dir=dir+ "\n[出力] .html形式 ブラウザ閲覧用 > "+ArticleName+".txt"
+	objprm ProgressStat,dir
+}
+
+if OutputFormat(2)=1{
+	sdim res2:res2=res_txt:sdim tmp:sdim buf
+	buf="# "+ArticleName+"\nGenerated by HotNews in "+time+"\n"
+	strrep res2,"_",""
+	split res2,"@",res2
+	repeat length(res2)
+		split res2(cnt),",",tmp
+		repeat length(tmp)
+			if cnt=0{
+				buf=buf+"## "+tmp(0)+"\n"
+			}else{
+				buf=buf+"- "+tmp(cnt)+"\n"
+			}
+		loop
+	loop
+	notesel buf
+	notesave ArticleName+".md"
+	dir=dir+ "\n[出力] .md  形式 Notion等向け > "+ArticleName+".md"
+	objprm ProgressStat,dir
+}
+
+if OutputFormat(3)=1{
+	sdim res2:res2=res_txt:sdim tmp:sdim buf
+	buf="{\n \"articlename\":\""+ArticleName+"\",\n \"sourse\": \"HotNews\",\n \"time\": \""+time+"\",\n \"articles\": [\n"
+	strrep res2,"_",""
+	split res2,"@",res2
+	dim a
+	repeat length(res2)
+		a=cnt
+		split res2(cnt),",",tmp
+		repeat length(tmp)
+			if cnt=0{
+				if a=0{
+					buf=buf+"\n  {\n   \"category\": \""+tmp(0)+"\",\n"
+				}else{
+					buf=buf+",\n  {\n   \"category\": \""+tmp(0)+"\",\n"
+				}
+			}else:if cnt=length(tmp){
+				buf=buf+"   \"title\": \""+tmp(cnt)+"\""
+			}else{
+				buf=buf+"   \"title\": \""+tmp(cnt)+"\",\n"
+			}
+		loop
+		buf=buf+"  }"
+	loop
+	buf=buf+"\n ]\n}"
+	notesel buf
+	notesave ArticleName+".json"
+	dir=dir+ "\n[出力] .json形式 組み込み向け > "+ArticleName+".json"
+	objprm ProgressStat,dir
+}
+
+if OutputFormat(4)=1{
+	sdim res2:res2=res_txt:sdim tmp:sdim buf
+	buf=ArticleName+",By HotNews,"+time+"\n,カテゴリ,内容"
+	strrep res2,"_",""
+
+split res2,"@",res2
+repeat length(res2)
+	split res2(cnt),",",tmp
+	repeat length(tmp)
+		if cnt!=0{
+			buf=buf+"\n"+tmp(0)+","+tmp(cnt)
+		}
+	loop
+loop
+
+sdim tmp
+dim a:a=0
+dim b:b=0
+repeat length(FeedFieldList)
+	if FeedFieldEnable(cnt)!=1{continue}
+	repeat
+		if FeedDataName(a,b)!="[EOF]"{
+			tmp=tmp+","+FeedDataName(a,b)
+		}else{
+			break
+		}
+		b++
+	loop
+	a++:b=0
+loop
+	buf=buf+"\n提供リスト"+tmp
+
+	notesel buf
+	notesave ArticleName+".csv"
+	dir=dir+ "\n[出力] .csv 形式 Excel向け      > "+ArticleName+".csv"
+	objprm ProgressStat,dir
+}
+dir=dir+"\n\nSUCCESS！Press「Exit」or「x」to close."
+	objprm ProgressStat,dir
+	gosub *setButtonGosub
+	stop

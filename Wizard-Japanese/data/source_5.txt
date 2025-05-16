@@ -1,0 +1,5 @@
+日経新聞@スポーツ https://assets.wor.jp/rss/rdf/nikkei/sports.rdf
+産経新聞@スポーツ https://assets.wor.jp/rss/rdf/sankei/sports.rdf
+読売新聞@スポーツ https://assets.wor.jp/rss/rdf/yomiuri/sports.rdf
+47News@スポーツ https://assets.wor.jp/rss/rdf/ynnews/sports.rdf
+[EOF]
