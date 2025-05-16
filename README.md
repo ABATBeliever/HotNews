@@ -1,12 +1,21 @@
 
 ---
 # 💫 HotNews
+![License](https://img.shields.io/badge/license-Apache-blue.svg)
+![Version](https://img.shields.io/badge/version-1.0.1.0-green.svg)
+![Version](https://img.shields.io/badge/Language-HSP3.6-yellow.svg)
 
 Let's Make A News Summary！RSSリーダーと生成AIを使い、あなただけのニュースの見出しを作りましょう！
 
 [English Version is here](README_ENG.md)
 
 ---
+
+## ⬇️ ダウンロード
+[Download](https://github.com/ABATBeliever/HotNews/releases)
+
+---
+
 ## 🫠 主な機能
 - ウィザードを通じて簡単に記事を作成
 ![image](https://github.com/user-attachments/assets/a474b107-946a-4f66-b9d5-88227ff9a68c)
@@ -15,10 +24,6 @@ Let's Make A News Summary！RSSリーダーと生成AIを使い、あなただ�
 - ヘッドレス版で操作を自動化！FTP自動アップロード機能付き
 [自動アップロードの例はこちら](https://abatbeliever.net/app/HotNews/)
 ![image](https://github.com/user-attachments/assets/63b4b713-cc40-4b86-9c88-546285373715)
-
----
-## ⬇️ ダウンロード
-<準備中>
 
 ---
 ## 🚀 使用方法
