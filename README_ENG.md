@@ -26,7 +26,7 @@ Please Wait
 ---
 ## 🚀 How to use
 
-<GUI>
+[GUI]
   
 1. Download and extract Windows_x64_Wizard_en_x.x.x.x.zip from Release.
   
@@ -34,7 +34,7 @@ Please Wait
 
 3. Enter API key and output format.
 
-<HeadLess>
+[HeadLess]
   
 1. Download and extract Windows_x64_HeadLess_en_x.x.x.x.zip from Release.
   
@@ -57,7 +57,7 @@ Please Wait
 
 ## ⚖ License
 
-| 対象 | ライセンス |
+| Subject | License |
 |------|------------|
 | SourseCode（.hsp） | [Apache License 2.0](LICENSE) |
 | OutputFile（HotNews*.*） | No License* |
