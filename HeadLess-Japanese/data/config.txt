@@ -1,4 +1,4 @@
-API______<APIを入力>
+API______ 
 URL______ https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=
 Name_____ HotNews
 txt______ Enable Disable
