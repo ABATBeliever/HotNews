@@ -1,12 +1,20 @@
 
 ---
 # 💫 HotNews
+![License](https://img.shields.io/badge/license-Apache-blue.svg)
+![Version](https://img.shields.io/badge/version-1.0.1.0-green.svg)
+![Version](https://img.shields.io/badge/Language-HSP3.6-yellow.svg)
 
 Let's Make A News Summary！
 
 Create your own news headlines using an RSS reader and a generative AI!
 
 [Japanese Version is here](README.md)
+
+---
+
+## ⬇️ ダウンロード
+[Download](https://github.com/ABATBeliever/HotNews/releases)
 
 ---
 ## 🫠 Main Functions
@@ -17,11 +25,6 @@ Create your own news headlines using an RSS reader and a generative AI!
 - Automate your operations with a headless version! +FTP auto-submission function
 [Use-case](https://abatbeliever.net/app/HotNews/)
 ![image](https://github.com/user-attachments/assets/63b4b713-cc40-4b86-9c88-546285373715)
-
----
-## ⬇️ Download
-
-Please Wait
 
 ---
 ## 🚀 How to use
